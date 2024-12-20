@@ -1,0 +1,36 @@
+PROC STORCLAS                                                           00010018
+/*                                                                    */00020018
+/*  modify the appropriate FILTLIST statement and include other HLQs  */00030018
+/*                                                                    */00040018
+FILTLIST DB2D_HLQ          INCLUDE(DSND*.**)                            00060018
+FILTLIST ZCX_HLQ           INCLUDE(ZCX.**)                              00070018
+FILTLIST SORT_DD           INCLUDE(SORTWK*,                             00370018
+                                   SORTDK*)                             00380018
+SELECT                                                                  00390018
+  WHEN (&STORCLAS = 'SCNOSMS')                                          00400018
+    DO                                                                  00410018
+      SET &STORCLAS = ''                                                00420018
+      EXIT CODE(0)                                                      00430018
+    END                                                                 00440018
+  WHEN (&DSN = &ZCX_HLQ)                                                00450018
+    DO                                                                  00460018
+      SET &STORCLAS = 'CXROOTSC'                                        00470018
+      EXIT CODE(0)                                                      00480018
+    END                                                                 00490018
+  WHEN (&DSN = &DB2D_HLQ) /* Db2 V13 */                                 00550018
+    DO                                                                  00560018
+      SET &STORCLAS = 'DBCLASSD'                                        00570018
+      EXIT CODE(0)                                                      00580018
+    END                                                                 00590018
+  WHEN (&DSTYPE = 'TEMP')                                               00600019
+    DO                                                                  00610019
+      SET &STORCLAS = 'SCWORK'                                          00620019
+      EXIT CODE(0)                                                      00630019
+    END                                                                 00640019
+  OTHERWISE                                                             00700018
+    DO                                                                  00710018
+      SET &STORCLAS = 'SCEXTEAV'                                        00720018
+      EXIT CODE(0)                                                      00730018
+    END                                                                 00740018
+  END  /* END SELECT                        */                          00750018
+END    /* END OF STORAGE CLASS ROUTINE PROC */                          00760018

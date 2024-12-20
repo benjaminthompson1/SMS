@@ -1,0 +1,39 @@
+PROC STORGRP                                                            00010018
+/*                                                                */    00020018
+/* Storage group is set based on what Storage Class was assigned. */    00030018
+/*                                                                */    00040018
+WRITE '&DSN = ' &DSN                                                    00050018
+WRITE '&STORCLAS = ' &STORCLAS                                          00060018
+WRITE '&DATACLAS = ' &DATACLAS                                          00070018
+WRITE '&DSTYPE = ' &DSTYPE                                              00080018
+SELECT                                                                  00090018
+  WHEN (&STORCLAS = 'SCNOSMS')                                          00100018
+    DO                                                                  00110018
+      EXIT CODE(0)                                                      00120018
+    END                                                                 00130018
+  WHEN (&STORCLAS= 'CXROOTSC')                                          00260018
+    DO                                                                  00270018
+      SET &STORGRP = 'CXROOTSG'                                         00280018
+      WRITE '&STORGRP = ' &STORGRP                                      00290018
+      EXIT CODE(0)                                                      00300018
+    END                                                                 00310018
+  WHEN (&STORCLAS = 'DBCLASSD') /* Db2 V13 */                           00320018
+    DO                                                                  00330018
+      SET &STORGRP = 'DBCLASSD'                                         00340018
+      WRITE '&STORGRP = ' &STORGRP                                      00350018
+      EXIT CODE(0)                                                      00360018
+    END                                                                 00370018
+  WHEN (&STORCLAS = 'SCWORK')                                           00380020
+    DO                                                                  00390019
+      SET &STORGRP = 'SGWORK'                                           00400019
+      WRITE '&STORGRP = ' &STORGRP                                      00410019
+      EXIT CODE(0)                                                      00420019
+    END                                                                 00430019
+  WHEN (&STORCLAS= 'SCEXTEAV')                                          00440018
+    DO                                                                  00450018
+      SET &STORGRP = 'SGEXTEAV'                                         00460018
+      WRITE '&STORGRP = ' &STORGRP                                      00470018
+      EXIT CODE(0)                                                      00480018
+    END                                                                 00490018
+  END  /* END SELECT                        */                          00500018
+END    /* END OF STORAGE GROUP ROUTINE PROC */                          00510018

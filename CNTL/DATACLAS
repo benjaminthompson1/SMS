@@ -1,0 +1,27 @@
+PROC 1 DATACLAS                           /* DATACLASS START */                 
+IF &DSN(1) = 'DSND10' THEN                                                      
+  DO                                                                            
+    SET &DATACLAS='DBDGDC'                                                      
+    EXIT                                                                        
+  END                                                                           
+IF &DSN(1) = 'DSNC130' THEN                                                     
+  DO                                                                            
+    SET &DATACLAS='DBDGDC'                                                      
+    EXIT                                                                        
+  END                                                                           
+IF &DSN(1) = 'DSNCD10' THEN                                                     
+  DO                                                                            
+    SET &DATACLAS='DBDGDC'                                                      
+    EXIT                                                                        
+  END                                                                           
+IF &DSN(1) = 'DZ00SYS' THEN                                                     
+  DO                                                                            
+    SET &DATACLAS='DBDGDC'                                                      
+    EXIT                                                                        
+  END                                                                           
+IF &DSN(1) = 'ZCX' THEN                                                         
+  DO                                                                            
+    SET &DATACLAS='CXDC'                                                        
+    EXIT                                                                        
+  END                                                                           
+END                                                                             

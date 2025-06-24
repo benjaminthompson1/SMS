@@ -1,36 +1,56 @@
-PROC STORCLAS                                                           00010018
-/*                                                                    */00020018
-/*  modify the appropriate FILTLIST statement and include other HLQs  */00030018
-/*                                                                    */00040018
-FILTLIST DB2D_HLQ          INCLUDE(DSND*.**)                            00060018
-FILTLIST ZCX_HLQ           INCLUDE(ZCX.**)                              00070018
-FILTLIST SORT_DD           INCLUDE(SORTWK*,                             00370018
-                                   SORTDK*)                             00380018
-SELECT                                                                  00390018
-  WHEN (&STORCLAS = 'SCNOSMS')                                          00400018
-    DO                                                                  00410018
-      SET &STORCLAS = ''                                                00420018
-      EXIT CODE(0)                                                      00430018
-    END                                                                 00440018
-  WHEN (&DSN = &ZCX_HLQ)                                                00450018
-    DO                                                                  00460018
-      SET &STORCLAS = 'CXROOTSC'                                        00470018
-      EXIT CODE(0)                                                      00480018
-    END                                                                 00490018
-  WHEN (&DSN = &DB2D_HLQ) /* Db2 V13 */                                 00550018
-    DO                                                                  00560018
-      SET &STORCLAS = 'DBCLASSD'                                        00570018
-      EXIT CODE(0)                                                      00580018
-    END                                                                 00590018
-  WHEN (&DSTYPE = 'TEMP')                                               00600019
-    DO                                                                  00610019
-      SET &STORCLAS = 'SCWORK'                                          00620019
-      EXIT CODE(0)                                                      00630019
-    END                                                                 00640019
-  OTHERWISE                                                             00700018
-    DO                                                                  00710018
-      SET &STORCLAS = 'SCEXTEAV'                                        00720018
-      EXIT CODE(0)                                                      00730018
-    END                                                                 00740018
-  END  /* END SELECT                        */                          00750018
-END    /* END OF STORAGE CLASS ROUTINE PROC */                          00760018
+PROC STORCLAS
+/**********************************************************************/
+/*  Storage Class Selection Routine                                   */
+/*  Last Updated: 2024-12-24                                          */
+/*  Purpose: Assign storage class values based on dataset attributes  */
+/*                                                                    */
+/*  Storage Classes Used:                                             */
+/*  - SCNOSMS   : Bypasses SMS management                             */
+/*  - CXROOTSC  : For ZCX container datasets                          */
+/*  - DBCLASSD  : For DB2 V13 datasets                                */
+/*  - SCWORK    : For temporary datasets                              */
+/*  - SCEXTEAV  : Default extended format VSAM                        */
+/**********************************************************************/
+
+/* Define common patterns for matching */
+FILTLIST DB2V13_PREFIXES  INCLUDE('DSNCD10','DSNC130','DSND10')
+FILTLIST ZCX_TYPES        INCLUDE('VS','FS')
+
+/* Main selection logic */
+SELECT
+  /* Handle non-SMS managed datasets first for early exit */
+  WHEN (&STORCLAS = 'SCNOSMS')
+    DO
+      SET &STORCLAS = ''   /* Remove SMS management */
+      EXIT CODE(0)         /* Exit immediately */
+    END
+
+  /* Handle all zCX datasets */
+  WHEN (&HLQ = 'ZCX')
+    DO
+      SET &STORCLAS = 'CXROOTSC'
+      EXIT CODE(0)
+    END
+
+  /* Handle all DB2 V13 datasets */
+  WHEN (&HLQ = &DB2V13_PREFIXES)
+    DO
+      SET &STORCLAS = 'DBCLASSD'
+      EXIT CODE(0)
+    END
+
+  /* Process temporary datasets */
+  WHEN (&DSTYPE = 'TEMP')
+    DO
+      SET &STORCLAS = 'SCWORK'
+      EXIT CODE(0)
+    END
+
+  /* Default handling for all other datasets */
+  OTHERWISE
+    DO
+      SET &STORCLAS = 'SCEXTEAV'
+      EXIT CODE(0)
+    END
+END /* End SELECT */
+END /* End PROC STORCLAS */

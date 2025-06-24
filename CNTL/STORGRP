@@ -1,39 +1,70 @@
-PROC STORGRP                                                            00010018
-/*                                                                */    00020018
-/* Storage group is set based on what Storage Class was assigned. */    00030018
-/*                                                                */    00040018
-WRITE '&DSN = ' &DSN                                                    00050018
-WRITE '&STORCLAS = ' &STORCLAS                                          00060018
-WRITE '&DATACLAS = ' &DATACLAS                                          00070018
-WRITE '&DSTYPE = ' &DSTYPE                                              00080018
-SELECT                                                                  00090018
-  WHEN (&STORCLAS = 'SCNOSMS')                                          00100018
-    DO                                                                  00110018
-      EXIT CODE(0)                                                      00120018
-    END                                                                 00130018
-  WHEN (&STORCLAS= 'CXROOTSC')                                          00260018
-    DO                                                                  00270018
-      SET &STORGRP = 'CXROOTSG'                                         00280018
-      WRITE '&STORGRP = ' &STORGRP                                      00290018
-      EXIT CODE(0)                                                      00300018
-    END                                                                 00310018
-  WHEN (&STORCLAS = 'DBCLASSD') /* Db2 V13 */                           00320018
-    DO                                                                  00330018
-      SET &STORGRP = 'DBCLASSD'                                         00340018
-      WRITE '&STORGRP = ' &STORGRP                                      00350018
-      EXIT CODE(0)                                                      00360018
-    END                                                                 00370018
-  WHEN (&STORCLAS = 'SCWORK')                                           00380020
-    DO                                                                  00390019
-      SET &STORGRP = 'SGWORK'                                           00400019
-      WRITE '&STORGRP = ' &STORGRP                                      00410019
-      EXIT CODE(0)                                                      00420019
-    END                                                                 00430019
-  WHEN (&STORCLAS= 'SCEXTEAV')                                          00440018
-    DO                                                                  00450018
-      SET &STORGRP = 'SGEXTEAV'                                         00460018
-      WRITE '&STORGRP = ' &STORGRP                                      00470018
-      EXIT CODE(0)                                                      00480018
-    END                                                                 00490018
-  END  /* END SELECT                        */                          00500018
-END    /* END OF STORAGE GROUP ROUTINE PROC */                          00510018
+PROC STORGRP
+/**********************************************************************/
+/*  Storage Group Selection Routine                                   */
+/*  Last Updated: 2024-12-24                                          */
+/*                                                                    */
+/*  Purpose: Assign storage groups based on storage class and HLQ     */
+/*          This routine handles the allocation of datasets across    */
+/*          different storage tiers based on their usage patterns     */
+/*                                                                    */
+/*  Storage Groups Used:                                              */
+/*  - CXROOTSG : Container storage for ZCX datasets                   */
+/*               Used for containerized workloads                     */
+/*  - SGWORK   : Temporary dataset storage                            */
+/*               Optimized for high-performance, short-term data      */
+/*  - DBCLASSD : DB2 V13 database storage                             */
+/*               Configured for database performance and recovery     */
+/*  - SGEXTEAV : Extended format datasets                             */
+/*               Supports extended addressing and VSAM capabilities   */
+/**********************************************************************/
+
+/* Define common patterns for matching */
+FILTLIST DB2V13_PREFIXES  INCLUDE('DSNCD10','DSNCD')
+FILTLIST VALID_STORCLASS  INCLUDE('CXROOTSC','SCWORK','SCEXTEAV')
+
+/* Write initial diagnostic information for troubleshooting */
+WRITE 'Storage Class = ' &STORCLAS
+WRITE 'Data Class    = ' &DATACLAS
+WRITE 'Dataset Type  = ' &DSTYPE
+
+SELECT
+  /* Non-SMS managed datasets require early exit */
+  WHEN (&STORCLAS = 'SCNOSMS')
+    DO
+      EXIT CODE(0)
+    END
+
+  /* Handle temporary datasets with optimized storage */
+  WHEN (&STORCLAS = 'SCWORK')
+    DO
+      SET &STORGRP = 'TEMPVIO','SGWORK'
+      WRITE 'Storage Group = ' &STORGRP
+      EXIT CODE(0)
+    END
+
+  /* Process container storage for ZCX workloads */
+  WHEN (&STORCLAS = 'CXROOTSC')
+    DO
+      SET &STORGRP = 'CXROOTSG'
+      WRITE 'Storage Group = ' &STORGRP
+      EXIT CODE(0)
+    END
+
+  /* Process DB2 V13 datasets with consolidated handling */
+  WHEN (&HLQ = &DB2V13_PREFIXES)
+    DO
+      SET &STORGRP = 'DBCLASSD'
+      WRITE 'Storage Group = ' &STORGRP
+      EXIT CODE(0)
+    END
+
+  /* Default case ensures all datasets get appropriate storage */
+  OTHERWISE
+    DO
+      SET &STORGRP = 'SGEXTEAV'
+      WRITE 'Storage Group = ' &STORGRP
+      EXIT CODE(0)
+    END
+
+END /* End SELECT */
+END /* End PROC STORGRP */

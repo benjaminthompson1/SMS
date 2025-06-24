@@ -1,27 +1,32 @@
-PROC 1 DATACLAS                           /* DATACLASS START */                 
-IF &DSN(1) = 'DSND10' THEN                                                      
-  DO                                                                            
-    SET &DATACLAS='DBDGDC'                                                      
-    EXIT                                                                        
-  END                                                                           
-IF &DSN(1) = 'DSNC130' THEN                                                     
-  DO                                                                            
-    SET &DATACLAS='DBDGDC'                                                      
-    EXIT                                                                        
-  END                                                                           
-IF &DSN(1) = 'DSNCD10' THEN                                                     
-  DO                                                                            
-    SET &DATACLAS='DBDGDC'                                                      
-    EXIT                                                                        
-  END                                                                           
-IF &DSN(1) = 'DZ00SYS' THEN                                                     
-  DO                                                                            
-    SET &DATACLAS='DBDGDC'                                                      
-    EXIT                                                                        
-  END                                                                           
-IF &DSN(1) = 'ZCX' THEN                                                         
-  DO                                                                            
-    SET &DATACLAS='CXDC'                                                        
-    EXIT                                                                        
-  END                                                                           
-END                                                                             
+PROC 1 DATACLAS
+/**********************************************************************/
+/* DATACLAS ROUTINE - LAST UPDATED: 2024-12-24                        */
+/* PURPOSE: ASSIGN DATACLAS VALUES FOR DB2 AND ZCX DATASETS           */
+/*  DATA CLASSES USED:                                                */
+/*  - DBDGDC  : DB2 DATABASE DATASETS                                 */
+/*  - CXDC    :   Z/OS CONTAINER EXTENSIONS DATASETS                  */
+/*  - DEFAULT : STANDARD DATASETS                                     */
+/**********************************************************************/
+
+FILTLIST DB2_SYSTEM_DBS INCLUDE('DSNDB01','DSNDB06','DSNDB07')
+FILTLIST DB2_PREFIX    INCLUDE('DSNC130','DSNCD10','DZ00SYS')
+FILTLIST DB2_TYPES     INCLUDE('DSNDBC','DSNDBD')
+
+SELECT
+  WHEN (&DSN(1) = &DB2_PREFIX &&
+        &DSN(2) = &DB2_TYPES)
+    DO
+      SET &DATACLAS = 'DBDGDC'
+    END
+  WHEN (&DSN(1) = 'ZCX' &&
+        &DSN(2) = 'VS')
+    DO
+      SET &DATACLAS = 'CXDC'
+    END
+  WHEN (&DSN(2) = 'ZCX' &&
+        &DSN(3) = 'FS')
+    DO
+      SET &DATACLAS = 'CXDC'
+    END
+END /* End SELECT */
+END /* END PROC DATACLAS */

@@ -1,0 +1,66 @@
+PROC STORGRP
+/**********************************************************************/
+/*  STORGRP ROUTINE - LAST UPDATED: 2026-04-13                        */
+/*  PURPOSE: ASSIGN STORAGE GROUPS BASED ON STORAGE CLASS AND HLQ     */
+/*                                                                    */
+/*  STORAGE GROUPS USED:                                              */
+/*  - CXROOTSG : CONTAINER STORAGE FOR ZCX DATASETS                   */
+/*               MAPPED FROM STORCLAS=CXROOTSC                        */
+/*  - SGWORK   : TEMPORARY DATASET STORAGE                            */
+/*               MAPPED FROM STORCLAS=SCWORK                          */
+/*  - DBCLASSD : DB2 V13 CATALOG/DIRECTORY STORAGE                    */
+/*               MAPPED FROM STORCLAS=DBCLASSD                        */
+/*  - SGEXTEAV : EXTENDED FORMAT DEFAULT STORAGE                      */
+/*               MAPPED FROM STORCLAS=SCEXTEAV                        */
+/*                                                                    */
+/**********************************************************************/
+
+/* WRITE DIAGNOSTIC INFORMATION FOR TROUBLESHOOTING */
+WRITE 'DATASET NAME  = ' &DSN
+WRITE 'STORAGE CLASS = ' &STORCLAS
+WRITE 'DATA CLASS    = ' &DATACLAS
+WRITE 'DATASET TYPE  = ' &DSTYPE
+
+SELECT
+  /* NON-SMS MANAGED DATASETS - EXIT WITHOUT SETTING STORGRP */
+  WHEN (&STORCLAS = 'SCNOSMS')
+    DO
+      EXIT CODE(0)
+    END
+
+  /* TEMPORARY DATASETS - DIRECTED TO WORK STORAGE */
+  WHEN (&STORCLAS = 'SCWORK')
+    DO
+      SET &STORGRP = 'TEMPVIO','SGWORK'
+      WRITE 'STORAGE GROUP = ' &STORGRP
+      EXIT CODE(0)
+    END
+
+  /* ZCX CONTAINER DATASETS */
+  WHEN (&STORCLAS = 'CXROOTSC')
+    DO
+      SET &STORGRP = 'CXROOTSG'
+      WRITE 'STORAGE GROUP = ' &STORGRP
+      EXIT CODE(0)
+    END
+
+  /* DB2 V13 CATALOG AND DIRECTORY DATASETS */
+  /* DRIVEN BY STORCLAS=DBCLASSD (SET IN STORCLAS ACS ROUTINE) */
+  /* NO SEPARATE HLQ CHECK NEEDED - STORCLAS IS THE SINGLE GATE */
+  WHEN (&STORCLAS = 'DBCLASSD')
+    DO
+      SET &STORGRP = 'DBCLASSD'
+      WRITE 'STORAGE GROUP = ' &STORGRP
+      EXIT CODE(0)
+    END
+
+  /* DEFAULT - ALL REMAINING SMS MANAGED DATASETS */
+  OTHERWISE
+    DO
+      SET &STORGRP = 'SGEXTEAV'
+      WRITE 'STORAGE GROUP = ' &STORGRP
+      EXIT CODE(0)
+    END
+
+END /* END SELECT */
+END /* END PROC STORGRP */

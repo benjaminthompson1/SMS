@@ -1,0 +1,35 @@
+PROC 1 DATACLAS
+/**********************************************************************/
+/* DATACLAS ROUTINE - LAST UPDATED: 2026-04-13                        */
+/* PURPOSE: ASSIGN DATACLAS VALUES FOR DB2 AND ZCX DATASETS           */
+/*                                                                    */
+/*  DATA CLASSES USED:                                                */
+/*  - DBDGDC  : DB2 V13 CATALOG/DIRECTORY DATASETS ONLY               */
+/*              (DSNCD10.DSNDBC.** AND DSNCD10.DSNDBD.**)             */
+/*  - CXDC    : Z/OS CONTAINER EXTENSIONS DATASETS                    */
+/*  - DEFAULT : STANDARD DATASETS (NO DATACLAS SET)                   */
+/*                                                                    */
+/**********************************************************************/
+
+FILTLIST DB2V13_PREFIX    INCLUDE('DSNCD10','DSNC130','DSND10')
+FILTLIST ZCX_TYPES     INCLUDE('VS','FS')
+
+SELECT
+  /* DB2 V13 USER TABLESPACE AND OTHER DB2 DATASETS             */
+  /* COVERS DSND10.** AND DSNC130.**                            */
+  WHEN (&HLQ = &DB2V13_PREFIX)
+    DO
+      SET &DATACLAS = 'DBDGDC'
+      EXIT CODE(0)
+    END
+
+  /* ZCX DATASETS - HLQ=ZCX, SECOND QUAL=VS OR FS */
+  WHEN (&DSN(1) = 'ZCX' &&
+        &DSN(2) = &ZCX_TYPES)
+    DO
+      SET &DATACLAS = 'CXDC'
+      EXIT CODE(0)
+    END
+
+END /* END SELECT */
+END /* END PROC DATACLAS */

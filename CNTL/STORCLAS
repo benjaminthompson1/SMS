@@ -1,0 +1,58 @@
+PROC STORCLAS
+/**********************************************************************/
+/*  STORCLAS ROUTINE - LAST UPDATED: 2026-04-13                       */
+/*  PURPOSE: ASSIGN STORAGE CLASS VALUES BASED ON DATASET ATTRIBUTES  */
+/*                                                                    */
+/*  STORAGE CLASSES USED:                                             */
+/*  - SCNOSMS   : BYPASSES SMS MANAGEMENT (EARLY EXIT)                */
+/*  - CXROOTSC  : FOR ZCX CONTAINER DATASETS (HLQ=ZCX)                */
+/*  - DBCLASSD  : FOR DB2 V13 CATALOG/DIRECTORY DATASETS ONLY         */
+/*  - SCWORK    : FOR TEMPORARY DATASETS                              */
+/*  - SCEXTEAV  : DEFAULT EXTENDED FORMAT VSAM (ALL OTHERS)           */
+/*                                                                    */
+/**********************************************************************/
+
+/* DEFINE PATTERNS FOR MATCHING */
+FILTLIST DB2V13_PREFIX    INCLUDE('DSNCD10','DSNC130','DSND10')
+FILTLIST ZCX_TYPES        INCLUDE('VS','FS')
+
+/* MAIN SELECTION LOGIC */
+SELECT
+  /* HANDLE NON-SMS MANAGED DATASETS FIRST FOR EARLY EXIT */
+  WHEN (&STORCLAS = 'SCNOSMS')
+    DO
+      SET &STORCLAS = ''   /* REMOVE SMS MANAGEMENT */
+      EXIT CODE(0)         /* EXIT IMMEDIATELY */
+    END
+
+  /* HANDLE ALL ZCX DATASETS (HLQ=ZCX) */
+  WHEN (&HLQ = 'ZCX')
+    DO
+      SET &STORCLAS = 'CXROOTSC'
+      EXIT CODE(0)
+    END
+
+  /* DB2 V13 USER TABLESPACE AND OTHER DB2 DATASETS             */
+  /* COVERS DSND10.** AND DSNC130.**                            */
+  WHEN (&HLQ = &DB2V13_PREFIX)
+    DO
+      SET &STORCLAS = 'DBCLASSD'
+      EXIT CODE(0)
+    END
+
+  /* PROCESS TEMPORARY DATASETS */
+  WHEN (&DSTYPE = 'TEMP')
+    DO
+      SET &STORCLAS = 'SCWORK'
+      EXIT CODE(0)
+    END
+
+  /* DEFAULT HANDLING FOR ALL OTHER DATASETS */
+  OTHERWISE
+    DO
+      SET &STORCLAS = 'SCEXTEAV'
+      EXIT CODE(0)
+    END
+
+END /* END SELECT */
+END /* END PROC STORCLAS */
